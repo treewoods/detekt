@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Test
 
 private val DEFINITIONS = """
     import org.jetbrains.kotlin.analysis.api.KaSession
-    import org.jetbrains.kotlin.analysis.api.analyze
     import org.jetbrains.kotlin.analysis.api.lifetime.KaLifetimeOwner
     import org.jetbrains.kotlin.analysis.api.lifetime.KaLifetimeToken
+    import org.jetbrains.kotlin.analysis.api.session.analyze
     import org.jetbrains.kotlin.analysis.api.types.KaType
     import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
     import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
@@ -37,6 +37,27 @@ class LeakingSessionBoundTypeSpec(private val env: KotlinEnvironmentContainer) {
             """
                 $DEFINITIONS
 
+                val result = analyze(element) {
+                    Unit as KaType
+                }
+            """.trimIndent(),
+        )
+
+        assertThat(findings).hasSize(1)
+    }
+
+    @Test
+    fun `returning a lifetime-scoped type from the deprecated analyze triggers the rule`() {
+        val findings = rule.lintWithContext(
+            env,
+            """
+                import org.jetbrains.kotlin.analysis.api.analyze
+                import org.jetbrains.kotlin.analysis.api.types.KaType
+                import org.jetbrains.kotlin.psi.KtElement
+
+                val element: KtElement = TODO()
+
+                @Suppress("DEPRECATION")
                 val result = analyze(element) {
                     Unit as KaType
                 }
