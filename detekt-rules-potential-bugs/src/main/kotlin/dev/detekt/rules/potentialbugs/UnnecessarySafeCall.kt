@@ -8,8 +8,10 @@ import dev.detekt.api.RequiresAnalysisApi
 import dev.detekt.api.Rule
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
+import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticCheckerKind
+import org.jetbrains.kotlin.analysis.api.diagnostics.diagnostics
 import org.jetbrains.kotlin.analysis.api.fir.diagnostics.KaFirDiagnostic
+import org.jetbrains.kotlin.analysis.api.fir.diagnostics.KaUnstableDiagnosticApi
 import org.jetbrains.kotlin.psi.KtSafeQualifiedExpression
 
 /**
@@ -33,13 +35,14 @@ class UnnecessarySafeCall(config: Config) :
     ),
     RequiresAnalysisApi {
 
-    @OptIn(KaExperimentalApi::class)
+    @OptIn(KaExperimentalApi::class, KaUnstableDiagnosticApi::class)
     override fun visitSafeQualifiedExpression(expression: KtSafeQualifiedExpression) {
         super.visitSafeQualifiedExpression(expression)
 
         val isUnnecessarySafeCall = analyze(expression) {
-            expression
-                .directDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
+            expression.diagnostics()
+                .withCheckers(KaDiagnosticCheckerKind.COMMON)
+                .directOnly(true)
                 .any { it is KaFirDiagnostic.UnnecessarySafeCall }
         }
 

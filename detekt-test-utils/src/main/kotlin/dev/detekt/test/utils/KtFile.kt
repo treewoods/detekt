@@ -1,13 +1,13 @@
 package dev.detekt.test.utils
 
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
-import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.components.KaCompilationResult
-import org.jetbrains.kotlin.analysis.api.components.KaCompilerTarget
+import org.jetbrains.kotlin.analysis.api.compilation.KaCompilationResult
+import org.jetbrains.kotlin.analysis.api.compilation.KaCompilationTarget
+import org.jetbrains.kotlin.analysis.api.compilation.compile
+import org.jetbrains.kotlin.analysis.api.compilation.createCompilationOptions
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticWithPsi
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
-import org.jetbrains.kotlin.cli.create
-import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.analysis.api.session.analyze
 import org.jetbrains.kotlin.diagnostics.PsiDiagnosticUtils
 import org.jetbrains.kotlin.psi.KtFile
 
@@ -18,13 +18,11 @@ import org.jetbrains.kotlin.psi.KtFile
 internal fun KtFile.checkNoCompilationErrors() {
     val file = this
     analyze(file) {
-        val result = compile(
-            file,
-            CompilerConfiguration.create(),
-            KaCompilerTarget.Jvm(isTestMode = false, compiledClassHandler = null, debuggerExtension = null)
-        ) {
-            it.severity != KaSeverity.ERROR
+        val options = createCompilationOptions {
+            target(KaCompilationTarget.JVM)
+            allowedErrorFilter { it.severity != KaSeverity.ERROR }
         }
+        val result = compile(file, options)
 
         if (result is KaCompilationResult.Failure) {
             val errors = result.errors.joinToString("\n") {

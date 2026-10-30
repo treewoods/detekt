@@ -13,9 +13,10 @@ import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
 import org.jetbrains.kotlin.cli.jvm.config.configureJdkClasspathRoots
 import org.jetbrains.kotlin.cli.jvm.configureAdvancedJvmOptions
 import org.jetbrains.kotlin.cli.jvm.setupJvmSpecificArguments
-import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
+import org.jetbrains.kotlin.config.MessageCollectorAccess
+import org.jetbrains.kotlin.config.messageCollector
 import java.io.File
 import java.io.PrintStream
 import java.nio.file.Path
@@ -25,6 +26,7 @@ import java.nio.file.Path
  * Be aware that if any path of [pathsToAnalyze] is a directory it is scanned for java and kotlin files.
  */
 @Suppress("LongParameterList")
+@OptIn(MessageCollectorAccess::class) // detekt installs its own collector, which can only be done directly
 fun createCompilerConfiguration(
     pathsToAnalyze: List<Path>,
     classpath: List<Path>,
@@ -74,10 +76,7 @@ fun createCompilerConfiguration(
         addJavaSourceRoots(javaFiles)
         addKotlinSourceRoots(kotlinFiles)
         addJvmClasspathRoots(classpathFiles)
-        put(
-            CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY,
-            PrintingMessageCollector(printStream, MessageRenderer.PLAIN_FULL_PATHS, false)
-        )
+        messageCollector = PrintingMessageCollector(printStream, MessageRenderer.PLAIN_FULL_PATHS, false)
         setupLanguageVersionSettings(jvmCompilerArguments)
         setupJvmSpecificArguments(jvmCompilerArguments)
         configureAdvancedJvmOptions(jvmCompilerArguments)
